@@ -1,6 +1,12 @@
 package helpers
 
-import "github.com/labstack/echo/v4"
+import (
+	"math/rand"
+
+	"github.com/labstack/echo/v4"
+)
+
+var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 
 func InputError(e echo.Context, custom *string) error {
 	msg := "InvalidRequest"
@@ -22,4 +28,12 @@ func genericError(e echo.Context, code int, msg string) error {
 	return e.JSON(code, map[string]string{
 		"error": msg,
 	})
+}
+
+func RandomVarchar(length int) string {
+	b := make([]rune, length)
+	for i := range b {
+		b[i] = letters[rand.Intn(len(letters))]
+	}
+	return string(b)
 }
