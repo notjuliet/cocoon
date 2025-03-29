@@ -84,6 +84,7 @@ var run = &cli.Command{
 			Relays:          cmd.StringSlice("relays"),
 		})
 		if err != nil {
+			fmt.Printf("error creating cocoon: %v", err)
 			return err
 		}
 
