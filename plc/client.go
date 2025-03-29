@@ -14,23 +14,19 @@ import (
 	"strings"
 
 	"github.com/bluesky-social/indigo/atproto/crypto"
-	"github.com/bluesky-social/indigo/atproto/data"
 	"github.com/bluesky-social/indigo/util"
 )
 
 type Client struct {
-	h *http.Client
-
+	h           *http.Client
 	service     string
-	rotationKey *crypto.PrivateKeyK256
-	recoveryKey string
 	pdsHostname string
+	rotationKey *crypto.PrivateKeyK256
 }
 
 type ClientArgs struct {
 	Service     string
 	RotationKey []byte
-	RecoveryKey string
 	PdsHostname string
 }
 
@@ -48,12 +44,16 @@ func NewClient(args *ClientArgs) (*Client, error) {
 		h:           util.RobustHTTPClient(),
 		service:     args.Service,
 		rotationKey: rk,
-		recoveryKey: args.RecoveryKey,
 		pdsHostname: args.PdsHostname,
 	}, nil
 }
 
-func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, recovery string, handle string) (string, map[string]any, error) {
+func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, recovery string, handle string) (string, *PlcOperation, error) {
+	pubsigkey, err := sigkey.PublicKey()
+	if err != nil {
+		return "", nil, err
+	}
+
 	pubrotkey, err := c.rotationKey.PublicKey()
 	if err != nil {
 		return "", nil, err
@@ -61,9 +61,6 @@ func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, r
 
 	// todo
 	rotationKeys := []string{pubrotkey.DIDKey()}
-	if c.recoveryKey != "" {
-		rotationKeys = []string{c.recoveryKey, rotationKeys[0]}
-	}
 	if recovery != "" {
 		rotationKeys = func(recovery string) []string {
 			newRotationKeys := []string{recovery}
@@ -74,46 +71,49 @@ func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, r
 		}(recovery)
 	}
 
-	op, err := c.FormatAndSignAtprotoOp(sigkey, handle, rotationKeys, nil)
-	if err != nil {
-		return "", nil, err
-	}
-
-	did, err := didForCreateOp(op)
-	if err != nil {
-		return "", nil, err
-	}
-
-	return did, op, nil
-}
-
-func (c *Client) UpdateUserHandle(ctx context.Context, didstr string, nhandle string) error {
-	return nil
-}
-
-func (c *Client) FormatAndSignAtprotoOp(sigkey *crypto.PrivateKeyK256, handle string, rotationKeys []string, prev *string) (map[string]any, error) {
-	pubsigkey, err := sigkey.PublicKey()
-	if err != nil {
-		return nil, err
-	}
-
-	op := map[string]any{
-		"type": "plc_operation",
-		"verificationMethods": map[string]string{
+	op := PlcOperation{
+		Type: "plc_operation",
+		VerificationMethods: map[string]string{
 			"atproto": pubsigkey.DIDKey(),
 		},
-		"rotationKeys": rotationKeys,
-		"alsoKnownAs":  []string{"at://" + handle},
-		"services": map[string]any{
-			"atproto_pds": map[string]string{
-				"type":     "AtprotoPersonalDataServer",
-				"endpoint": "https://" + c.pdsHostname,
+		RotationKeys: rotationKeys,
+		AlsoKnownAs: []string{
+			"at://" + handle,
+		},
+		Services: map[string]PlcOperationService{
+			"atproto_pds": {
+				Type:     "AtprotoPersonalDataServer",
+				Endpoint: "https://" + c.pdsHostname,
 			},
 		},
-		"prev": prev,
+		Prev: nil,
 	}
 
-	b, err := data.MarshalCBOR(op)
+	signed, err := c.FormatAndSignAtprotoOp(sigkey, op)
+	if err != nil {
+		return "", nil, err
+	}
+
+	did, err := didFromOp(signed)
+	if err != nil {
+		return "", nil, err
+	}
+
+	return did, &op, nil
+}
+
+func didFromOp(op *PlcOperation) (string, error) {
+	b, err := op.MarshalCBOR()
+	if err != nil {
+		return "", err
+	}
+	s := sha256.Sum256(b)
+	b32 := strings.ToLower(base32.StdEncoding.EncodeToString(s[:]))
+	return "did:plc:" + b32[0:24], nil
+}
+
+func (c *Client) FormatAndSignAtprotoOp(sigkey *crypto.PrivateKeyK256, op PlcOperation) (*PlcOperation, error) {
+	b, err := op.MarshalCBOR()
 	if err != nil {
 		return nil, err
 	}
@@ -123,27 +123,12 @@ func (c *Client) FormatAndSignAtprotoOp(sigkey *crypto.PrivateKeyK256, handle st
 		return nil, err
 	}
 
-	op["sig"] = base64.RawURLEncoding.EncodeToString(sig)
+	op.Sig = base64.RawURLEncoding.EncodeToString(sig)
 
-	return op, nil
+	return &op, nil
 }
 
-func didForCreateOp(op map[string]any) (string, error) {
-	b, err := data.MarshalCBOR(op)
-	if err != nil {
-		return "", err
-	}
-
-	h := sha256.New()
-	h.Write(b)
-	bs := h.Sum(nil)
-
-	b32 := strings.ToLower(base32.StdEncoding.EncodeToString(bs))
-
-	return "did:plc:" + b32[0:24], nil
-}
-
-func (c *Client) SendOperation(ctx context.Context, did string, op any) error {
+func (c *Client) SendOperation(ctx context.Context, did string, op *PlcOperation) error {
 	b, err := json.Marshal(op)
 	if err != nil {
 		return err
@@ -162,14 +147,10 @@ func (c *Client) SendOperation(ctx context.Context, did string, op any) error {
 	}
 	defer resp.Body.Close()
 
-	fmt.Println(resp.StatusCode)
-
 	b, err = io.ReadAll(resp.Body)
 	if err != nil {
-		return err
+		return fmt.Errorf("error sending operation. status code: %d, response: %s", resp.StatusCode, string(b))
 	}
-
-	fmt.Println(string(b))
 
 	return nil
 }
