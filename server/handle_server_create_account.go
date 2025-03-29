@@ -116,7 +116,7 @@ func (s *Server) handleCreateAccount(e echo.Context) error {
 		return helpers.ServerError(e, nil)
 	}
 
-	did, op, err := s.plcClient.CreateDID(e.Request().Context(), k, "", request.Handle)
+	did, op, err := s.plcClient.CreateDID(k, "", request.Handle)
 	if err != nil {
 		s.logger.Error("error creating operation", "endpoint", "com.atproto.server.createAccount", "error", err)
 		return helpers.ServerError(e, nil)

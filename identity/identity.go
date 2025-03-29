@@ -10,9 +10,14 @@ import (
 	"strings"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
+	"github.com/bluesky-social/indigo/util"
 )
 
-func ResolveHandle(ctx context.Context, handle string) (string, error) {
+func ResolveHandle(ctx context.Context, cli *http.Client, handle string) (string, error) {
+	if cli == nil {
+		cli = util.RobustHTTPClient()
+	}
+
 	var did string
 
 	_, err := syntax.ParseHandle(handle)
@@ -71,63 +76,11 @@ func ResolveHandle(ctx context.Context, handle string) (string, error) {
 	return did, nil
 }
 
-type DidDoc struct {
-	Context             []string                   `json:"@context"`
-	Id                  string                     `json:"id"`
-	AlsoKnownAs         []string                   `json:"alsoKnownAs"`
-	VerificationMethods []DidDocVerificationMethod `json:"verificationMethods"`
-	Service             []DidDocService            `json:"service"`
-}
+func FetchDidDoc(ctx context.Context, cli *http.Client, did string) (*DidDoc, error) {
+	if cli == nil {
+		cli = util.RobustHTTPClient()
+	}
 
-type DidDocVerificationMethod struct {
-	Id                 string `json:"id"`
-	Type               string `json:"type"`
-	Controller         string `json:"controller"`
-	PublicKeyMultibase string `json:"publicKeyMultibase"`
-}
-
-type DidDocService struct {
-	Id              string `json:"id"`
-	Type            string `json:"type"`
-	ServiceEndpoint string `json:"serviceEndpoint"`
-}
-
-type DidData struct {
-	Did                 string                      `json:"did"`
-	VerificationMethods map[string]string           `json:"verificationMethods"`
-	RotationKeys        []string                    `json:"rotationKeys"`
-	AlsoKnownAs         []string                    `json:"alsoKnownAs"`
-	Services            map[string]OperationService `json:"services"`
-}
-
-type OperationService struct {
-	Type     string `json:"type"`
-	Endpoint string `json:"endpoint"`
-}
-
-type DidLog []DidLogEntry
-
-type DidLogEntry struct {
-	Sig                 string                      `json:"sig"`
-	Prev                *string                     `json:"prev"`
-	Type                string                      `json:"string"`
-	Services            map[string]OperationService `json:"services"`
-	AlsoKnownAs         []string                    `json:"alsoKnownAs"`
-	RotationKeys        []string                    `json:"rotationKeys"`
-	VerificationMethods map[string]string           `json:"verificationMethods"`
-}
-
-type DidAuditEntry struct {
-	Did       string      `json:"did"`
-	Operation DidLogEntry `json:"operation"`
-	Cid       string      `json:"cid"`
-	Nullified bool        `json:"nullified"`
-	CreatedAt string      `json:"createdAt"`
-}
-
-type DidAuditLog []DidAuditEntry
-
-func FetchDidDoc(ctx context.Context, did string) (*DidDoc, error) {
 	var ustr string
 	if strings.HasPrefix(did, "did:plc:") {
 		ustr = fmt.Sprintf("https://plc.directory/%s", did)
@@ -161,7 +114,11 @@ func FetchDidDoc(ctx context.Context, did string) (*DidDoc, error) {
 	return &diddoc, nil
 }
 
-func FetchDidData(ctx context.Context, did string) (*DidData, error) {
+func FetchDidData(ctx context.Context, cli *http.Client, did string) (*DidData, error) {
+	if cli == nil {
+		cli = util.RobustHTTPClient()
+	}
+
 	var ustr string
 	ustr = fmt.Sprintf("https://plc.directory/%s/data", did)
 
@@ -189,7 +146,11 @@ func FetchDidData(ctx context.Context, did string) (*DidData, error) {
 	return &diddata, nil
 }
 
-func FetchDidAuditLog(ctx context.Context, did string) (DidAuditLog, error) {
+func FetchDidAuditLog(ctx context.Context, cli *http.Client, did string) (DidAuditLog, error) {
+	if cli == nil {
+		cli = util.RobustHTTPClient()
+	}
+
 	var ustr string
 	ustr = fmt.Sprintf("https://plc.directory/%s/log/audit", did)
 
@@ -217,8 +178,12 @@ func FetchDidAuditLog(ctx context.Context, did string) (DidAuditLog, error) {
 	return didlog, nil
 }
 
-func ResolveService(ctx context.Context, did string) (string, error) {
-	diddoc, err := FetchDidDoc(ctx, did)
+func ResolveService(ctx context.Context, cli *http.Client, did string) (string, error) {
+	if cli == nil {
+		cli = util.RobustHTTPClient()
+	}
+
+	diddoc, err := FetchDidDoc(ctx, cli, did)
 	if err != nil {
 		return "", err
 	}

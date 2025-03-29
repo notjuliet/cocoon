@@ -15,6 +15,7 @@ import (
 
 	"github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/bluesky-social/indigo/util"
+	"github.com/haileyok/cocoon/identity"
 )
 
 type Client struct {
@@ -25,6 +26,7 @@ type Client struct {
 }
 
 type ClientArgs struct {
+	H           *http.Client
 	Service     string
 	RotationKey []byte
 	PdsHostname string
@@ -35,13 +37,17 @@ func NewClient(args *ClientArgs) (*Client, error) {
 		args.Service = "https://plc.directory"
 	}
 
+	if args.H == nil {
+		args.H = util.RobustHTTPClient()
+	}
+
 	rk, err := crypto.ParsePrivateBytesK256([]byte(args.RotationKey))
 	if err != nil {
 		return nil, err
 	}
 
 	return &Client{
-		h:           util.RobustHTTPClient(),
+		h:           args.H,
 		service:     args.Service,
 		rotationKey: rk,
 		pdsHostname: args.PdsHostname,
@@ -80,7 +86,7 @@ func (c *Client) CreateDID(sigkey *crypto.PrivateKeyK256, recovery string, handl
 		AlsoKnownAs: []string{
 			"at://" + handle,
 		},
-		Services: map[string]OperationService{
+		Services: map[string]identity.OperationService{
 			"atproto_pds": {
 				Type:     "AtprotoPersonalDataServer",
 				Endpoint: "https://" + c.pdsHostname,

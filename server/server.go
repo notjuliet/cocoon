@@ -15,6 +15,7 @@ import (
 	"github.com/bluesky-social/indigo/api/atproto"
 	"github.com/bluesky-social/indigo/atproto/syntax"
 	"github.com/bluesky-social/indigo/events"
+	"github.com/bluesky-social/indigo/util"
 	"github.com/bluesky-social/indigo/xrpc"
 	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v4"
@@ -31,6 +32,7 @@ import (
 )
 
 type Server struct {
+	http       *http.Client
 	httpd      *http.Server
 	echo       *echo.Echo
 	db         *gorm.DB
@@ -268,7 +270,10 @@ func New(args *Args) (*Server, error) {
 		return nil, err
 	}
 
+	h := util.RobustHTTPClient()
+
 	plcClient, err := plc.NewClient(&plc.ClientArgs{
+		H:           h,
 		Service:     "https://plc.directory",
 		PdsHostname: args.Hostname,
 		RotationKey: rkbytes,
@@ -293,6 +298,7 @@ func New(args *Args) (*Server, error) {
 	}
 
 	s := &Server{
+		http:       h,
 		httpd:      httpd,
 		echo:       e,
 		logger:     args.Logger,
@@ -308,7 +314,7 @@ func New(args *Args) (*Server, error) {
 			Relays:         args.Relays,
 		},
 		evtman:   events.NewEventManager(events.NewMemPersister()),
-		passport: identity.NewPassport(identity.NewMemCache(10_000)),
+		passport: identity.NewPassport(h, identity.NewMemCache(10_000)),
 	}
 
 	s.repoman = NewRepoMan(s) // TODO: this is way too lazy, stop it

@@ -2,6 +2,7 @@ package identity
 
 import (
 	"context"
+	"net/http"
 	"sync"
 )
 
@@ -16,12 +17,18 @@ type BackingCache interface {
 }
 
 type Passport struct {
+	h  *http.Client
 	bc BackingCache
 	lk sync.Mutex
 }
 
-func NewPassport(bc BackingCache) *Passport {
+func NewPassport(h *http.Client, bc BackingCache) *Passport {
+	if h == nil {
+		h = http.DefaultClient
+	}
+
 	return &Passport{
+		h:  h,
 		bc: bc,
 		lk: sync.Mutex{},
 	}
@@ -40,7 +47,7 @@ func (p *Passport) FetchDoc(ctx context.Context, did string) (*DidDoc, error) {
 	p.lk.Lock() // this is pretty pathetic, and i should rethink this. but for now, fuck it
 	defer p.lk.Unlock()
 
-	doc, err := FetchDidDoc(ctx, did)
+	doc, err := FetchDidDoc(ctx, p.h, did)
 	if err != nil {
 		return nil, err
 	}
@@ -60,7 +67,7 @@ func (p *Passport) ResolveHandle(ctx context.Context, handle string) (string, er
 		}
 	}
 
-	did, err := ResolveHandle(ctx, handle)
+	did, err := ResolveHandle(ctx, p.h, handle)
 	if err != nil {
 		return "", err
 	}
