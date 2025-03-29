@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
-	"github.com/haileyok/cocoon/plc"
 )
 
 func ResolveHandle(ctx context.Context, handle string) (string, error) {
@@ -94,14 +93,14 @@ type DidDocService struct {
 }
 
 type DidData struct {
-	Did                 string                    `json:"did"`
-	VerificationMethods map[string]string         `json:"verificationMethods"`
-	RotationKeys        []string                  `json:"rotationKeys"`
-	AlsoKnownAs         []string                  `json:"alsoKnownAs"`
-	Services            map[string]DidDataService `json:"services"`
+	Did                 string                      `json:"did"`
+	VerificationMethods map[string]string           `json:"verificationMethods"`
+	RotationKeys        []string                    `json:"rotationKeys"`
+	AlsoKnownAs         []string                    `json:"alsoKnownAs"`
+	Services            map[string]OperationService `json:"services"`
 }
 
-type DidDataService struct {
+type OperationService struct {
 	Type     string `json:"type"`
 	Endpoint string `json:"endpoint"`
 }
@@ -109,13 +108,13 @@ type DidDataService struct {
 type DidLog []DidLogEntry
 
 type DidLogEntry struct {
-	Sig                 string                          `json:"sig"`
-	Prev                *string                         `json:"prev"`
-	Type                string                          `json:"string"`
-	Services            map[string]plc.OperationService `json:"services"`
-	AlsoKnownAs         []string                        `json:"alsoKnownAs"`
-	RotationKeys        []string                        `json:"rotationKeys"`
-	VerificationMethods map[string]string               `json:"verificationMethods"`
+	Sig                 string                      `json:"sig"`
+	Prev                *string                     `json:"prev"`
+	Type                string                      `json:"string"`
+	Services            map[string]OperationService `json:"services"`
+	AlsoKnownAs         []string                    `json:"alsoKnownAs"`
+	RotationKeys        []string                    `json:"rotationKeys"`
+	VerificationMethods map[string]string           `json:"verificationMethods"`
 }
 
 type DidAuditEntry struct {

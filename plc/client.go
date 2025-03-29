@@ -48,7 +48,7 @@ func NewClient(args *ClientArgs) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, recovery string, handle string) (string, *Operation, error) {
+func (c *Client) CreateDID(sigkey *crypto.PrivateKeyK256, recovery string, handle string) (string, *Operation, error) {
 	pubsigkey, err := sigkey.PublicKey()
 	if err != nil {
 		return "", nil, err
@@ -93,22 +93,12 @@ func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, r
 		return "", nil, err
 	}
 
-	did, err := didFromOp(&op)
+	did, err := DidFromOp(&op)
 	if err != nil {
 		return "", nil, err
 	}
 
 	return did, &op, nil
-}
-
-func didFromOp(op *Operation) (string, error) {
-	b, err := op.MarshalCBOR()
-	if err != nil {
-		return "", err
-	}
-	s := sha256.Sum256(b)
-	b32 := strings.ToLower(base32.StdEncoding.EncodeToString(s[:]))
-	return "did:plc:" + b32[0:24], nil
 }
 
 func (c *Client) SignOp(sigkey *crypto.PrivateKeyK256, op *Operation) error {
@@ -152,4 +142,14 @@ func (c *Client) SendOperation(ctx context.Context, did string, op *Operation) e
 	}
 
 	return nil
+}
+
+func DidFromOp(op *Operation) (string, error) {
+	b, err := op.MarshalCBOR()
+	if err != nil {
+		return "", err
+	}
+	s := sha256.Sum256(b)
+	b32 := strings.ToLower(base32.StdEncoding.EncodeToString(s[:]))
+	return "did:plc:" + b32[0:24], nil
 }

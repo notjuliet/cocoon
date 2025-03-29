@@ -4,17 +4,18 @@ import (
 	"encoding/json"
 
 	"github.com/bluesky-social/indigo/atproto/data"
+	"github.com/haileyok/cocoon/identity"
 	cbg "github.com/whyrusleeping/cbor-gen"
 )
 
 type Operation struct {
-	Type                string                      `json:"type"`
-	VerificationMethods map[string]string           `json:"verificationMethods"`
-	RotationKeys        []string                    `json:"rotationKeys"`
-	AlsoKnownAs         []string                    `json:"alsoKnownAs"`
-	Services            map[string]OperationService `json:"services"`
-	Prev                *string                     `json:"prev"`
-	Sig                 string                      `json:"sig,omitempty"`
+	Type                string                               `json:"type"`
+	VerificationMethods map[string]string                    `json:"verificationMethods"`
+	RotationKeys        []string                             `json:"rotationKeys"`
+	AlsoKnownAs         []string                             `json:"alsoKnownAs"`
+	Services            map[string]identity.OperationService `json:"services"`
+	Prev                *string                              `json:"prev"`
+	Sig                 string                               `json:"sig,omitempty"`
 }
 
 type OperationService struct {
@@ -22,7 +23,6 @@ type OperationService struct {
 	Endpoint string `json:"endpoint"`
 }
 
-// This is kinda gross. We could just use cborgen i suppose?
 func (po *Operation) MarshalCBOR() ([]byte, error) {
 	if po == nil {
 		return cbg.CborNull, nil
