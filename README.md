@@ -7,23 +7,25 @@ Cocoon is a PDS implementation in Go. It is highly experimental, and is not read
 
 ### Impmlemented Endpoints
 
+> [!NOTE]
+Just because something is implemented doesn't mean it is finisehd. Tons of these are returning bad errors, don't do validation properly, etc. I'll make a "second pass" checklist at some point to do all of that.
+
 - [ ] com.atproto.identity.getRecommendedDidCredentials
 - [ ] com.atproto.identity.requestPlcOperationSignature
 - [x] com.atproto.identity.resolveHandle
 - [ ] com.atproto.identity.signPlcOperation
 - [ ] com.atproto.identity.submitPlcOperatioin
-- [ ] com.atproto.identity.updateHandle
+- [x] com.atproto.identity.updateHandle
 - [ ] com.atproto.label.queryLabels
 - [ ] com.atproto.moderation.createReport
 
-- [ ] com.atproto.repo.applyWrites
+- [x] com.atproto.repo.applyWrites
 - [x] com.atproto.repo.createRecord
 - [x] com.atproto.repo.putRecord
 - [ ] com.atproto.repo.deleteRecord
 - [x] com.atproto.repo.describeRepo
 - [x] com.atproto.repo.getRecord
 - [ ] com.atproto.repo.importRepo
-- [ ] com.atproto.repo.listMissingBlobs
 - [x] com.atproto.repo.listRecords
 - [ ] com.atproto.repo.listMissingBlobs
 
@@ -49,15 +51,15 @@ Cocoon is a PDS implementation in Go. It is highly experimental, and is not read
 - [ ] com.atproto.server.revokeAppPassword
 - [ ] com.atproto.server.updateEmail
 
-- [ ] com.atproto.sync.getBlob
+- [x] com.atproto.sync.getBlob
 - [x] com.atproto.sync.getBlocks
 - [x] com.atproto.sync.getLatestCommit
 - [x] com.atproto.sync.getRecord
 - [x] com.atproto.sync.getRepoStatus
 - [x] com.atproto.sync.getRepo
-- [ ] com.atproto.sync.listBlobs
+- [x] com.atproto.sync.listBlobs
 - [x] com.atproto.sync.listRepos
-- [ ] com.atproto.sync.notifyOfUpdate - BGS doesn't even have this implemented lol
+- ~[ ] com.atproto.sync.notifyOfUpdate~ - BGS doesn't even have this implemented lol
 - [x] com.atproto.sync.requestCrawl
 - [x] com.atproto.sync.subscribeRepos
 
