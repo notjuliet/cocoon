@@ -12,18 +12,13 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
-	"time"
 
 	"github.com/bluesky-social/indigo/atproto/crypto"
 	"github.com/bluesky-social/indigo/atproto/data"
-	"github.com/bluesky-social/indigo/did"
-	"github.com/bluesky-social/indigo/plc"
 	"github.com/bluesky-social/indigo/util"
 )
 
 type Client struct {
-	plc.CachingDidResolver
-
 	h *http.Client
 
 	service     string
@@ -49,14 +44,12 @@ func NewClient(args *ClientArgs) (*Client, error) {
 		return nil, err
 	}
 
-	resolver := did.NewMultiResolver()
 	return &Client{
-		CachingDidResolver: *plc.NewCachingDidResolver(resolver, 5*time.Minute, 100_000),
-		h:                  util.RobustHTTPClient(),
-		service:            args.Service,
-		rotationKey:        rk,
-		recoveryKey:        args.RecoveryKey,
-		pdsHostname:        args.PdsHostname,
+		h:           util.RobustHTTPClient(),
+		service:     args.Service,
+		rotationKey: rk,
+		recoveryKey: args.RecoveryKey,
+		pdsHostname: args.PdsHostname,
 	}, nil
 }
 
