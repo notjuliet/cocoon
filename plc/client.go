@@ -48,7 +48,7 @@ func NewClient(args *ClientArgs) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, recovery string, handle string) (string, *PlcOperation, error) {
+func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, recovery string, handle string) (string, *Operation, error) {
 	pubsigkey, err := sigkey.PublicKey()
 	if err != nil {
 		return "", nil, err
@@ -71,7 +71,7 @@ func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, r
 		}(recovery)
 	}
 
-	op := PlcOperation{
+	op := Operation{
 		Type: "plc_operation",
 		VerificationMethods: map[string]string{
 			"atproto": pubsigkey.DIDKey(),
@@ -80,7 +80,7 @@ func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, r
 		AlsoKnownAs: []string{
 			"at://" + handle,
 		},
-		Services: map[string]PlcOperationService{
+		Services: map[string]OperationService{
 			"atproto_pds": {
 				Type:     "AtprotoPersonalDataServer",
 				Endpoint: "https://" + c.pdsHostname,
@@ -89,12 +89,11 @@ func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, r
 		Prev: nil,
 	}
 
-	signed, err := c.FormatAndSignAtprotoOp(sigkey, op)
-	if err != nil {
+	if err := c.SignOp(sigkey, &op); err != nil {
 		return "", nil, err
 	}
 
-	did, err := didFromOp(signed)
+	did, err := didFromOp(&op)
 	if err != nil {
 		return "", nil, err
 	}
@@ -102,7 +101,7 @@ func (c *Client) CreateDID(ctx context.Context, sigkey *crypto.PrivateKeyK256, r
 	return did, &op, nil
 }
 
-func didFromOp(op *PlcOperation) (string, error) {
+func didFromOp(op *Operation) (string, error) {
 	b, err := op.MarshalCBOR()
 	if err != nil {
 		return "", err
@@ -112,23 +111,23 @@ func didFromOp(op *PlcOperation) (string, error) {
 	return "did:plc:" + b32[0:24], nil
 }
 
-func (c *Client) FormatAndSignAtprotoOp(sigkey *crypto.PrivateKeyK256, op PlcOperation) (*PlcOperation, error) {
+func (c *Client) SignOp(sigkey *crypto.PrivateKeyK256, op *Operation) error {
 	b, err := op.MarshalCBOR()
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	sig, err := c.rotationKey.HashAndSign(b)
 	if err != nil {
-		return nil, err
+		return err
 	}
 
 	op.Sig = base64.RawURLEncoding.EncodeToString(sig)
 
-	return &op, nil
+	return nil
 }
 
-func (c *Client) SendOperation(ctx context.Context, did string, op *PlcOperation) error {
+func (c *Client) SendOperation(ctx context.Context, did string, op *Operation) error {
 	b, err := json.Marshal(op)
 	if err != nil {
 		return err

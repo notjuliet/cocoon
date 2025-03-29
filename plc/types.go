@@ -7,23 +7,23 @@ import (
 	cbg "github.com/whyrusleeping/cbor-gen"
 )
 
-type PlcOperation struct {
-	Type                string                         `json:"type"`
-	VerificationMethods map[string]string              `json:"verificationMethods"`
-	RotationKeys        []string                       `json:"rotationKeys"`
-	AlsoKnownAs         []string                       `json:"alsoKnownAs"`
-	Services            map[string]PlcOperationService `json:"services"`
-	Prev                *string                        `json:"prev"`
-	Sig                 string                         `json:"sig,omitempty"`
+type Operation struct {
+	Type                string                      `json:"type"`
+	VerificationMethods map[string]string           `json:"verificationMethods"`
+	RotationKeys        []string                    `json:"rotationKeys"`
+	AlsoKnownAs         []string                    `json:"alsoKnownAs"`
+	Services            map[string]OperationService `json:"services"`
+	Prev                *string                     `json:"prev"`
+	Sig                 string                      `json:"sig,omitempty"`
 }
 
-type PlcOperationService struct {
+type OperationService struct {
 	Type     string `json:"type"`
 	Endpoint string `json:"endpoint"`
 }
 
 // This is kinda gross. We could just use cborgen i suppose?
-func (po *PlcOperation) MarshalCBOR() ([]byte, error) {
+func (po *Operation) MarshalCBOR() ([]byte, error) {
 	if po == nil {
 		return cbg.CborNull, nil
 	}

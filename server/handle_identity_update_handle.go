@@ -13,6 +13,7 @@ import (
 	"github.com/haileyok/cocoon/identity"
 	"github.com/haileyok/cocoon/internal/helpers"
 	"github.com/haileyok/cocoon/models"
+	"github.com/haileyok/cocoon/plc"
 	"github.com/labstack/echo/v4"
 )
 
@@ -46,18 +47,36 @@ func (s *Server) handleIdentityUpdateHandle(e echo.Context) error {
 
 		latest := log[len(log)-1]
 
+		var newAka []string
+		for _, aka := range latest.Operation.AlsoKnownAs {
+			if aka == "at://"+repo.Handle {
+				continue
+			}
+			newAka = append(newAka, aka)
+		}
+
+		newAka = append(newAka, "at://"+req.Handle)
+
+		op := plc.Operation{
+			Type:                "plc_operation",
+			VerificationMethods: latest.Operation.VerificationMethods,
+			RotationKeys:        latest.Operation.RotationKeys,
+			AlsoKnownAs:         newAka,
+			Services:            latest.Operation.Services,
+			Prev:                &latest.Cid,
+		}
+
 		k, err := crypto.ParsePrivateBytesK256(repo.SigningKey)
 		if err != nil {
 			s.logger.Error("error parsing signing key", "error", err)
 			return helpers.ServerError(e, nil)
 		}
 
-		op, err := s.plcClient.FormatAndSignAtprotoOp(k, req.Handle, latest.Operation.RotationKeys, &latest.Cid)
-		if err != nil {
+		if err := s.plcClient.SignOp(k, &op); err != nil {
 			return err
 		}
 
-		if err := s.plcClient.SendOperation(context.TODO(), repo.Repo.Did, op); err != nil {
+		if err := s.plcClient.SendOperation(e.Request().Context(), repo.Repo.Did, &op); err != nil {
 			return err
 		}
 	}

@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/bluesky-social/indigo/atproto/syntax"
+	"github.com/haileyok/cocoon/plc"
 )
 
 func ResolveHandle(ctx context.Context, handle string) (string, error) {
@@ -108,13 +109,13 @@ type DidDataService struct {
 type DidLog []DidLogEntry
 
 type DidLogEntry struct {
-	Sig                 string                    `json:"sig"`
-	Prev                *string                   `json:"prev"`
-	Type                string                    `json:"string"`
-	Services            map[string]DidDataService `json:"services"`
-	AlsoKnownAs         []string                  `json:"alsoKnownAs"`
-	RotationKeys        []string                  `json:"rotationKeys"`
-	VerificationMethods map[string]string         `json:"verificationMethods"`
+	Sig                 string                          `json:"sig"`
+	Prev                *string                         `json:"prev"`
+	Type                string                          `json:"string"`
+	Services            map[string]plc.OperationService `json:"services"`
+	AlsoKnownAs         []string                        `json:"alsoKnownAs"`
+	RotationKeys        []string                        `json:"rotationKeys"`
+	VerificationMethods map[string]string               `json:"verificationMethods"`
 }
 
 type DidAuditEntry struct {
