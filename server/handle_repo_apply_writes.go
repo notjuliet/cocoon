@@ -20,6 +20,11 @@ type ComAtprotoRepoApplyWritesItem struct {
 	Value      *MarshalableMap `json:"value,omitempty"`
 }
 
+type ComAtprotoRepoApplyWritesResponse struct {
+	Commit  RepoCommit         `json:"commit"`
+	Results []ApplyWriteResult `json:"results"`
+}
+
 func (s *Server) handleApplyWrites(e echo.Context) error {
 	repo := e.Get("repo").(*models.RepoActor)
 
@@ -49,10 +54,14 @@ func (s *Server) handleApplyWrites(e echo.Context) error {
 		})
 	}
 
-	if err := s.repoman.applyWrites(repo.Repo, ops, req.SwapCommit); err != nil {
+	results, err := s.repoman.applyWrites(repo.Repo, ops, req.SwapCommit)
+	if err != nil {
 		s.logger.Error("error applying writes", "error", err)
 		return helpers.ServerError(e, nil)
 	}
 
-	return nil
+	return e.JSON(200, ComAtprotoRepoApplyWritesResponse{
+		Commit:  *results[0].Commit,
+		Results: results,
+	})
 }

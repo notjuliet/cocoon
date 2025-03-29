@@ -40,7 +40,7 @@ func (s *Server) handleCreateRecord(e echo.Context) error {
 		optype = OpTypeUpdate
 	}
 
-	if err := s.repoman.applyWrites(repo.Repo, []Op{
+	results, err := s.repoman.applyWrites(repo.Repo, []Op{
 		{
 			Type:       optype,
 			Collection: req.Collection,
@@ -49,10 +49,13 @@ func (s *Server) handleCreateRecord(e echo.Context) error {
 			Record:     &req.Record,
 			SwapRecord: req.SwapRecord,
 		},
-	}, req.SwapCommit); err != nil {
+	}, req.SwapCommit)
+	if err != nil {
 		s.logger.Error("error applying writes", "error", err)
 		return helpers.ServerError(e, nil)
 	}
+
+	return e.JSON(200, results[0])
 
 	return nil
 }

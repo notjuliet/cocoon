@@ -82,11 +82,23 @@ func (mm *MarshalableMap) MarshalCBOR(w io.Writer) error {
 	return nil
 }
 
+type ApplyWriteResult struct {
+	Uri              string      `json:"string"`
+	Cid              string      `json:"cid"`
+	Commit           *RepoCommit `json:"commit"`
+	ValidationStatus *string     `json:"validationStatus"`
+}
+
+type RepoCommit struct {
+	Cid string `json:"cid"`
+	Rev string `json:"rev"`
+}
+
 // TODO make use of swap commit
-func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *string) error {
+func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *string) ([]ApplyWriteResult, error) {
 	rootcid, err := cid.Cast(urepo.Root)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	dbs := blockstore.New(urepo.Did, rm.db)
@@ -96,7 +108,7 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 
 	for i, op := range writes {
 		if op.Type != OpTypeCreate && op.Rkey == nil {
-			return fmt.Errorf("invalid rkey")
+			return nil, fmt.Errorf("invalid rkey")
 		} else if op.Rkey == nil {
 			op.Rkey = to.StringPtr(rm.clock.Next().String())
 			writes[i].Rkey = op.Rkey
@@ -104,14 +116,14 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 
 		_, err := syntax.ParseRecordKey(*op.Rkey)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		switch op.Type {
 		case OpTypeCreate:
 			nc, err := r.PutRecord(context.TODO(), op.Collection+"/"+*op.Rkey, op.Record)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			d, _ := data.MarshalCBOR(*op.Record)
@@ -126,12 +138,12 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 		case OpTypeDelete:
 			err := r.DeleteRecord(context.TODO(), op.Collection+"/"+*op.Rkey)
 			if err != nil {
-				return err
+				return nil, err
 			}
 		case OpTypeUpdate:
 			nc, err := r.UpdateRecord(context.TODO(), op.Collection+"/"+*op.Rkey, op.Record)
 			if err != nil {
-				return err
+				return nil, err
 			}
 
 			d, _ := data.MarshalCBOR(*op.Record)
@@ -148,7 +160,7 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 
 	newroot, rev, err := r.Commit(context.TODO(), urepo.SignFor)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	buf := new(bytes.Buffer)
@@ -159,12 +171,12 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 	})
 
 	if _, err := carstore.LdWrite(buf, hb); err != nil {
-		return err
+		return nil, err
 	}
 
 	diffops, err := r.DiffSince(context.TODO(), rootcid)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
 	ops := make([]*atproto.SyncSubscribeRepos_RepoOp, 0, len(diffops))
@@ -194,19 +206,21 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 
 		blk, err := dbs.Get(context.TODO(), op.NewCid)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		if _, err := carstore.LdWrite(buf, blk.Cid().Bytes(), blk.RawData()); err != nil {
-			return err
+			return nil, err
 		}
 	}
 
 	for _, op := range dbs.GetLog() {
 		if _, err := carstore.LdWrite(buf, op.Cid().Bytes(), op.RawData()); err != nil {
-			return err
+			return nil, err
 		}
 	}
+
+	var results []ApplyWriteResult
 
 	var blobs []lexutil.LexLink
 	for _, entry := range entries {
@@ -214,18 +228,28 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 			Columns:   []clause.Column{{Name: "did"}, {Name: "nsid"}, {Name: "rkey"}},
 			UpdateAll: true,
 		}).Create(&entry).Error; err != nil {
-			return err
+			return nil, err
 		}
 
 		// we should actually check the type (i.e. delete, create,., update) here but we'll do it later
 		cids, err := rm.incrementBlobRefs(urepo, entry.Value)
 		if err != nil {
-			return err
+			return nil, err
 		}
 
 		for _, c := range cids {
 			blobs = append(blobs, lexutil.LexLink(c))
 		}
+
+		results = append(results, ApplyWriteResult{
+			Uri: "at://" + urepo.Did + "/" + entry.Nsid + "/" + entry.Rkey,
+			Cid: entry.Cid,
+			Commit: &RepoCommit{
+				Cid: newroot.String(),
+				Rev: rev,
+			},
+			ValidationStatus: to.StringPtr("valid"), // TODO: obviously this might not be true atm lol
+		})
 	}
 
 	rm.s.evtman.AddEvent(context.TODO(), &events.XRPCStreamEvent{
@@ -243,10 +267,10 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 	})
 
 	if err := dbs.UpdateRepo(context.TODO(), newroot, rev); err != nil {
-		return err
+		return nil, err
 	}
 
-	return nil
+	return results, nil
 }
 
 func (rm *RepoMan) getRecordProof(urepo models.Repo, collection, rkey string) (cid.Cid, []blocks.Block, error) {
