@@ -1,0 +1,63 @@
+# Cocoon
+
+> [!WARNING]
+You should not use this PDS. You should not rely on this code as a reference for a PDS implementation. You should not trust this code. Using this PDS implementation may result in data loss, corruption, etc.
+
+Cocoon is a PDS implementation in Go. It is highly experimental, and is not ready for any production use.
+
+### Impmlemented Endpoints
+
+- [ ] com.atproto.identity.getRecommendedDidCredentials
+- [ ] com.atproto.identity.requestPlcOperationSignature
+- [x] com.atproto.identity.resolveHandle
+- [ ] com.atproto.identity.signPlcOperation
+- [ ] com.atproto.identity.submitPlcOperatioin
+- [ ] com.atproto.identity.updateHandle
+- [ ] com.atproto.label.queryLabels
+- [ ] com.atproto.moderation.createReport
+
+- [ ] com.atproto.repo.applyWrites
+- [x] com.atproto.repo.createRecord
+- [x] com.atproto.repo.putRecord
+- [ ] com.atproto.repo.deleteRecord
+- [x] com.atproto.repo.describeRepo
+- [x] com.atproto.repo.getRecord
+- [ ] com.atproto.repo.importRepo
+- [ ] com.atproto.repo.listMissingBlobs
+- [x] com.atproto.repo.listRecords
+- [ ] com.atproto.repo.listMissingBlobs
+
+
+- [ ] com.atproto.server.activateAccount
+- [ ] com.atproto.server.checkAccountStatus
+- [ ] com.atproto.server.confirmEmail
+- [x] com.atproto.server.createAccount
+- [ ] com.atproto.server.deactivateAccount
+- [ ] com.atproto.server.deleteAccount
+- [x] com.atproto.server.deleteSession
+- [x] com.atproto.server.describeServer
+- [ ] com.atproto.server.getAccountInviteCodes
+- [ ] com.atproto.server.getServiceAuth
+- [ ] com.atproto.server.listAppPasswords
+- [x] com.atproto.server.refreshSession
+- [ ] com.atproto.server.requestAccountDelete
+- [ ] com.atproto.server.requestEmailConfirmation
+- [ ] com.atproto.server.requestEmailUpdate
+- [ ] com.atproto.server.requestPasswordReset
+- [ ] com.atproto.server.reserveSigningKey
+- [ ] com.atproto.server.resetPassword
+- [ ] com.atproto.server.revokeAppPassword
+- [ ] com.atproto.server.updateEmail
+
+- [ ] com.atproto.sync.getBlob
+- [x] com.atproto.sync.getBlocks
+- [x] com.atproto.sync.getLatestCommit
+- [x] com.atproto.sync.getRecord
+- [x] com.atproto.sync.getRepoStatus
+- [x] com.atproto.sync.getRepo
+- [ ] com.atproto.sync.listBlobs
+- [x] com.atproto.sync.listRepos
+- [ ] com.atproto.sync.notifyOfUpdate - BGS doesn't even have this implemented lol
+- [x] com.atproto.sync.requestCrawl
+- [x] com.atproto.sync.subscribeRepos
+
