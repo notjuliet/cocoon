@@ -10,15 +10,15 @@ Cocoon is a PDS implementation in Go. It is highly experimental, and is not read
 > [!NOTE]
 Just because something is implemented doesn't mean it is finisehd. Tons of these are returning bad errors, don't do validation properly, etc. I'll make a "second pass" checklist at some point to do all of that.
 
+#### Identity
 - [ ] com.atproto.identity.getRecommendedDidCredentials
 - [ ] com.atproto.identity.requestPlcOperationSignature
 - [x] com.atproto.identity.resolveHandle
 - [ ] com.atproto.identity.signPlcOperation
 - [ ] com.atproto.identity.submitPlcOperatioin
 - [x] com.atproto.identity.updateHandle
-- [ ] com.atproto.label.queryLabels
-- [ ] com.atproto.moderation.createReport
 
+#### Repo
 - [x] com.atproto.repo.applyWrites
 - [x] com.atproto.repo.createRecord
 - [x] com.atproto.repo.putRecord
@@ -29,7 +29,7 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 - [x] com.atproto.repo.listRecords
 - [ ] com.atproto.repo.listMissingBlobs
 
-
+#### Server
 - [ ] com.atproto.server.activateAccount
 - [ ] com.atproto.server.checkAccountStatus
 - [x] com.atproto.server.confirmEmail
@@ -40,17 +40,18 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 - [x] com.atproto.server.describeServer
 - [ ] com.atproto.server.getAccountInviteCodes
 - [ ] com.atproto.server.getServiceAuth
-- [ ] com.atproto.server.listAppPasswords
+- ~[ ] com.atproto.server.listAppPasswords~ - not going to add app passwords
 - [x] com.atproto.server.refreshSession
 - [ ] com.atproto.server.requestAccountDelete
 - [x] com.atproto.server.requestEmailConfirmation
-- [ ] com.atproto.server.requestEmailUpdate
-- [ ] com.atproto.server.requestPasswordReset
+- [x] com.atproto.server.requestEmailUpdate
+- [x] com.atproto.server.requestPasswordReset
 - [ ] com.atproto.server.reserveSigningKey
-- [ ] com.atproto.server.resetPassword
-- [ ] com.atproto.server.revokeAppPassword
-- [ ] com.atproto.server.updateEmail
+- [x] com.atproto.server.resetPassword
+- ~[ ] com.atproto.server.revokeAppPassword~ - not going to add app passwords
+- [x] com.atproto.server.updateEmail
 
+#### Sync
 - [x] com.atproto.sync.getBlob
 - [x] com.atproto.sync.getBlocks
 - [x] com.atproto.sync.getLatestCommit
@@ -63,3 +64,8 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 - [x] com.atproto.sync.requestCrawl
 - [x] com.atproto.sync.subscribeRepos
 
+#### Other
+- [ ] com.atproto.label.queryLabels
+- [ ] com.atproto.moderation.createReport
+- [x] app.bsky.actor.getPreferences
+- [x] app.bsky.actor.putPreferences
