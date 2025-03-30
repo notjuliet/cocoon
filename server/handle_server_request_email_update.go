@@ -9,21 +9,29 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type ComAtprotoRequestEmailUpdateResponse struct {
+	TokenRequired bool `json:"tokenRequired"`
+}
+
 func (s *Server) handleServerRequestEmailUpdate(e echo.Context) error {
 	urepo := e.Get("repo").(*models.RepoActor)
 
-	code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))
-	eat := time.Now().Add(10 * time.Minute).UTC()
+	if urepo.EmailConfirmedAt != nil {
+		code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))
+		eat := time.Now().Add(10 * time.Minute).UTC()
 
-	if err := s.db.Exec("UPDATE repos SET email_update_code = ?, email_update_code_expires_at = ? WHERE did = ?", code, eat, urepo.Repo.Did).Error; err != nil {
-		s.logger.Error("error updating repo", "error", err)
-		return helpers.ServerError(e, nil)
+		if err := s.db.Exec("UPDATE repos SET email_update_code = ?, email_update_code_expires_at = ? WHERE did = ?", code, eat, urepo.Repo.Did).Error; err != nil {
+			s.logger.Error("error updating repo", "error", err)
+			return helpers.ServerError(e, nil)
+		}
+
+		if err := s.sendEmailUpdate(urepo.Email, urepo.Handle, code); err != nil {
+			s.logger.Error("error sending email", "error", err)
+			return helpers.ServerError(e, nil)
+		}
 	}
 
-	if err := s.sendEmailUpdate(urepo.Email, urepo.Handle, code); err != nil {
-		s.logger.Error("error sending email", "error", err)
-		return helpers.ServerError(e, nil)
-	}
-
-	return e.NoContent(200)
+	return e.JSON(200, ComAtprotoRequestEmailUpdateResponse{
+		TokenRequired: urepo.EmailConfirmedAt != nil,
+	})
 }
