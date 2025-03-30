@@ -1,6 +1,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/haileyok/cocoon/internal/helpers"
 	"github.com/haileyok/cocoon/models"
@@ -33,7 +35,9 @@ func (s *Server) handleServerConfirmEmail(e echo.Context) error {
 		return helpers.InputError(e, to.StringPtr("InvalidToken"))
 	}
 
-	if err := s.db.Exec("UPDATE repos SET email_verification_code = NULL, email_confirmed_at = NOW() WHERE did = ?", urepo.Repo.Did).Error; err != nil {
+	now := time.Now().UTC()
+
+	if err := s.db.Exec("UPDATE repos SET email_verification_code = NULL, email_confirmed_at = ? WHERE did = ?", now, urepo.Repo.Did).Error; err != nil {
 		s.logger.Error("error updating user", "error", err)
 		return helpers.ServerError(e, nil)
 	}
