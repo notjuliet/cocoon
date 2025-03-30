@@ -83,9 +83,10 @@ func (mm *MarshalableMap) MarshalCBOR(w io.Writer) error {
 }
 
 type ApplyWriteResult struct {
+	Type             string      `json:"$type,omitempty"`
 	Uri              string      `json:"uri"`
 	Cid              string      `json:"cid"`
-	Commit           *RepoCommit `json:"commit"`
+	Commit           *RepoCommit `json:"commit,omitempty"`
 	ValidationStatus *string     `json:"validationStatus"`
 }
 
