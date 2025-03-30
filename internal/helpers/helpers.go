@@ -6,7 +6,9 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var letters = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+// This will confirm to the regex in the application if 5 chars are used for each side of the -
+// /^[A-Z2-7]{5}-[A-Z2-7]{5}$/
+var letters = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ234567")
 
 func InputError(e echo.Context, custom *string) error {
 	msg := "InvalidRequest"
