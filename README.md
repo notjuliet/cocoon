@@ -32,7 +32,7 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 
 - [ ] com.atproto.server.activateAccount
 - [ ] com.atproto.server.checkAccountStatus
-- [ ] com.atproto.server.confirmEmail
+- [x] com.atproto.server.confirmEmail
 - [x] com.atproto.server.createAccount
 - [ ] com.atproto.server.deactivateAccount
 - [ ] com.atproto.server.deleteAccount
@@ -43,7 +43,7 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 - [ ] com.atproto.server.listAppPasswords
 - [x] com.atproto.server.refreshSession
 - [ ] com.atproto.server.requestAccountDelete
-- [ ] com.atproto.server.requestEmailConfirmation
+- [x] com.atproto.server.requestEmailConfirmation
 - [ ] com.atproto.server.requestEmailUpdate
 - [ ] com.atproto.server.requestPasswordReset
 - [ ] com.atproto.server.reserveSigningKey

@@ -2,6 +2,7 @@ package server
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/Azure/go-autorest/autorest/to"
 	"github.com/haileyok/cocoon/internal/helpers"
@@ -17,8 +18,9 @@ func (s *Server) handleServerRequestEmailConfirmation(e echo.Context) error {
 	}
 
 	code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))
+	eat := time.Now().Add(10 * time.Minute).UTC()
 
-	if err := s.db.Exec("UPDATE repos SET email_verification_code = ? WHERE did = ?", code, urepo.Repo.Did).Error; err != nil {
+	if err := s.db.Exec("UPDATE repos SET email_verification_code = ?, email_verification_code_expires_at = ? WHERE did = ?", code, eat, urepo.Repo.Did).Error; err != nil {
 		s.logger.Error("error updating user", "error", err)
 		return helpers.ServerError(e, nil)
 	}
