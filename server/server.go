@@ -340,7 +340,7 @@ func New(args *Args) (*Server, error) {
 	} else {
 		mail := mailyak.New(args.SmtpHost+":"+args.SmtpPort, smtp.PlainAuth("", args.SmtpUser, args.SmtpPass, args.SmtpHost))
 		mail.From(s.config.SmtpEmail)
-		mail.From(s.config.SmtpName)
+		mail.FromName(s.config.SmtpName)
 
 		s.mail = mail
 		s.mailLk = &sync.Mutex{}
