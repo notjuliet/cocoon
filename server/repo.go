@@ -273,6 +273,7 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 	}
 
 	for i := range results {
+		results[i].Type = results[i].Type + "Result"
 		results[i].Commit = &RepoCommit{
 			Cid: newroot.String(),
 			Rev: rev,
