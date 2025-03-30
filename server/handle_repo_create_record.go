@@ -55,5 +55,7 @@ func (s *Server) handleCreateRecord(e echo.Context) error {
 		return helpers.ServerError(e, nil)
 	}
 
+	results[0].Type = nil
+
 	return e.JSON(200, results[0])
 }

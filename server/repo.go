@@ -83,7 +83,7 @@ func (mm *MarshalableMap) MarshalCBOR(w io.Writer) error {
 }
 
 type ApplyWriteResult struct {
-	Type             string      `json:"$type,omitempty"`
+	Type             *string     `json:"$type,omitempty"`
 	Uri              string      `json:"uri"`
 	Cid              string      `json:"cid"`
 	Commit           *RepoCommit `json:"commit,omitempty"`
@@ -138,7 +138,7 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 				Value:     d,
 			})
 			results = append(results, ApplyWriteResult{
-				Type:             OpTypeCreate.String(),
+				Type:             to.StringPtr(OpTypeCreate.String()),
 				Uri:              "at://" + urepo.Did + "/" + op.Collection + "/" + *op.Rkey,
 				Cid:              nc.String(),
 				ValidationStatus: to.StringPtr("valid"), // TODO: obviously this might not be true atm lol
@@ -164,7 +164,7 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 				Value:     d,
 			})
 			results = append(results, ApplyWriteResult{
-				Type:             OpTypeUpdate.String(),
+				Type:             to.StringPtr(OpTypeUpdate.String()),
 				Uri:              "at://" + urepo.Did + "/" + op.Collection + "/" + *op.Rkey,
 				Cid:              nc.String(),
 				ValidationStatus: to.StringPtr("valid"), // TODO: obviously this might not be true atm lol
@@ -273,7 +273,7 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 	}
 
 	for i := range results {
-		results[i].Type = results[i].Type + "Result"
+		results[i].Type = to.StringPtr(*results[i].Type + "Result")
 		results[i].Commit = &RepoCommit{
 			Cid: newroot.String(),
 			Rev: rev,
