@@ -17,7 +17,7 @@ func (s *Server) handleServerRequestEmailUpdate(e echo.Context) error {
 	urepo := e.Get("repo").(*models.RepoActor)
 
 	if urepo.EmailConfirmedAt != nil {
-		code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))
+		code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(5), helpers.RandomVarchar(5))
 		eat := time.Now().Add(10 * time.Minute).UTC()
 
 		if err := s.db.Exec("UPDATE repos SET email_update_code = ?, email_update_code_expires_at = ? WHERE did = ?", code, eat, urepo.Repo.Did).Error; err != nil {

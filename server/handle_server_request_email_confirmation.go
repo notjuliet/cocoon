@@ -17,7 +17,7 @@ func (s *Server) handleServerRequestEmailConfirmation(e echo.Context) error {
 		return helpers.InputError(e, to.StringPtr("InvalidRequest"))
 	}
 
-	code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))
+	code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(5), helpers.RandomVarchar(5))
 	eat := time.Now().Add(10 * time.Minute).UTC()
 
 	if err := s.db.Exec("UPDATE repos SET email_verification_code = ?, email_verification_code_expires_at = ? WHERE did = ?", code, eat, urepo.Repo.Did).Error; err != nil {

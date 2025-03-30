@@ -6,7 +6,7 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
-var letters = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
+var letters = []rune("ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890")
 
 func InputError(e echo.Context, custom *string) error {
 	msg := "InvalidRequest"

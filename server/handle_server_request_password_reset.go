@@ -12,7 +12,7 @@ import (
 func (s *Server) handleServerRequestPasswordReset(e echo.Context) error {
 	urepo := e.Get("repo").(*models.RepoActor)
 
-	code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))
+	code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(5), helpers.RandomVarchar(5))
 	eat := time.Now().Add(10 * time.Minute).UTC()
 
 	if err := s.db.Exec("UPDATE repos SET password_reset_code = ?, password_reset_code_expires_at = ? WHERE did = ?", code, eat, urepo.Repo.Did).Error; err != nil {
