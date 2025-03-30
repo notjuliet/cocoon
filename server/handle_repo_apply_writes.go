@@ -60,12 +60,14 @@ func (s *Server) handleApplyWrites(e echo.Context) error {
 		return helpers.ServerError(e, nil)
 	}
 
+	commit := *results[0].Commit
+
 	for i := range results {
 		results[i].Commit = nil
 	}
 
 	return e.JSON(200, ComAtprotoRepoApplyWritesResponse{
-		Commit:  *results[0].Commit,
+		Commit:  commit,
 		Results: results,
 	})
 }
