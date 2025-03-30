@@ -56,6 +56,36 @@ func main() {
 				Required: true,
 				EnvVars:  []string{"COCOON_RELAYS"},
 			},
+			&cli.StringFlag{
+				Name:     "smtp-user",
+				Required: false,
+				EnvVars:  []string{"COCOON_SMTP_USER"},
+			},
+			&cli.StringFlag{
+				Name:     "smtp-pass",
+				Required: false,
+				EnvVars:  []string{"COCOON_SMTP_PASS"},
+			},
+			&cli.StringFlag{
+				Name:     "smtp-host",
+				Required: false,
+				EnvVars:  []string{"COCOON_SMTP_HOST"},
+			},
+			&cli.StringFlag{
+				Name:     "smtp-port",
+				Required: false,
+				EnvVars:  []string{"COCOON_SMTP_PORT"},
+			},
+			&cli.StringFlag{
+				Name:     "smtp-email",
+				Required: false,
+				EnvVars:  []string{"COCOON_SMTP_EMAIL"},
+			},
+			&cli.StringFlag{
+				Name:     "smtp-name",
+				Required: false,
+				EnvVars:  []string{"COCOON_SMTP_NAME"},
+			},
 		},
 		Commands: []*cli.Command{
 			run,
@@ -82,6 +112,12 @@ var run = &cli.Command{
 			ContactEmail:    cmd.String("contact-email"),
 			Version:         Version,
 			Relays:          cmd.StringSlice("relays"),
+			SmtpUser:        cmd.String("smtp-user"),
+			SmtpPass:        cmd.String("smtp-pass"),
+			SmtpHost:        cmd.String("smtp-host"),
+			SmtpPort:        cmd.String("smtp-port"),
+			SmtpEmail:       cmd.String("smtp-email"),
+			SmtpName:        cmd.String("smtp-name"),
 		})
 		if err != nil {
 			fmt.Printf("error creating cocoon: %v", err)

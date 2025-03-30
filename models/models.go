@@ -8,15 +8,16 @@ import (
 )
 
 type Repo struct {
-	Did              string `gorm:"primaryKey"`
-	CreatedAt        time.Time
-	Email            string `gorm:"uniqueIndex"`
-	EmailConfirmedAt *time.Time
-	Password         string
-	SigningKey       []byte
-	Rev              string
-	Root             []byte
-	Preferences      []byte
+	Did                   string `gorm:"primaryKey"`
+	CreatedAt             time.Time
+	Email                 string `gorm:"uniqueIndex"`
+	EmailConfirmedAt      *time.Time
+	EmailVerificationCode *string
+	Password              string
+	SigningKey            []byte
+	Rev                   string
+	Root                  []byte
+	Preferences           []byte
 }
 
 func (r *Repo) SignFor(ctx context.Context, did string, msg []byte) ([]byte, error) {

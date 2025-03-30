@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"log/slog"
 	"net/http"
+	"net/smtp"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/Azure/go-autorest/autorest/to"
@@ -17,6 +19,7 @@ import (
 	"github.com/bluesky-social/indigo/events"
 	"github.com/bluesky-social/indigo/util"
 	"github.com/bluesky-social/indigo/xrpc"
+	"github.com/domodwyer/mailyak/v3"
 	"github.com/go-playground/validator"
 	"github.com/golang-jwt/jwt/v4"
 	"github.com/haileyok/cocoon/identity"
@@ -34,6 +37,8 @@ import (
 type Server struct {
 	http       *http.Client
 	httpd      *http.Server
+	mail       *mailyak.MailYak
+	mailLk     *sync.Mutex
 	echo       *echo.Echo
 	db         *gorm.DB
 	plcClient  *plc.Client
@@ -56,6 +61,13 @@ type Args struct {
 	JwkPath         string
 	ContactEmail    string
 	Relays          []string
+
+	SmtpUser  string
+	SmtpPass  string
+	SmtpHost  string
+	SmtpPort  string
+	SmtpEmail string
+	SmtpName  string
 }
 
 type config struct {
@@ -65,6 +77,8 @@ type config struct {
 	ContactEmail   string
 	EnforcePeering bool
 	Relays         []string
+	SmtpEmail      string
+	SmtpName       string
 }
 
 type CustomValidator struct {
@@ -167,15 +181,14 @@ func (s *Server) handleSessionMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 			return helpers.InputError(e, to.StringPtr("ExpiredToken"))
 		}
 
-		e.Set("did", claims["sub"])
-
 		repo, err := s.getRepoActorByDid(claims["sub"].(string))
 		if err != nil {
 			s.logger.Error("error fetching repo", "error", err)
 			return helpers.ServerError(e, nil)
 		}
-		e.Set("repo", repo)
 
+		e.Set("repo", repo)
+		e.Set("did", claims["sub"])
 		e.Set("token", tokenstr)
 
 		if err := next(e); err != nil {
@@ -312,6 +325,8 @@ func New(args *Args) (*Server, error) {
 			ContactEmail:   args.ContactEmail,
 			EnforcePeering: false,
 			Relays:         args.Relays,
+			SmtpName:       args.SmtpName,
+			SmtpEmail:      args.SmtpEmail,
 		},
 		evtman:   events.NewEventManager(events.NewMemPersister()),
 		passport: identity.NewPassport(h, identity.NewMemCache(10_000)),
@@ -319,10 +334,23 @@ func New(args *Args) (*Server, error) {
 
 	s.repoman = NewRepoMan(s) // TODO: this is way too lazy, stop it
 
+	// TODO: should validate these args
+	if args.SmtpUser == "" || args.SmtpPass == "" || args.SmtpHost == "" || args.SmtpPort == "" || args.SmtpEmail == "" || args.SmtpName == "" {
+		args.Logger.Warn("not enough smpt args were provided. mailing will not work for your server.")
+	} else {
+		mail := mailyak.New(args.SmtpHost+":"+args.SmtpPort, smtp.PlainAuth("", args.SmtpUser, args.SmtpPass, args.SmtpHost))
+		mail.From(s.config.SmtpEmail)
+		mail.From(s.config.SmtpName)
+
+		s.mail = mail
+		s.mailLk = &sync.Mutex{}
+	}
+
 	return s, nil
 }
 
 func (s *Server) addRoutes() {
+	// random stuff
 	s.echo.GET("/", s.handleRoot)
 	s.echo.GET("/xrpc/_health", s.handleHealth)
 	s.echo.GET("/.well-known/did.json", s.handleWellKnown)
@@ -353,6 +381,8 @@ func (s *Server) addRoutes() {
 	s.echo.POST("/xrpc/com.atproto.server.refreshSession", s.handleRefreshSession, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/com.atproto.server.deleteSession", s.handleDeleteSession, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/com.atproto.identity.updateHandle", s.handleIdentityUpdateHandle, s.handleSessionMiddleware)
+	s.echo.POST("/xrpc/com.atproto.server.confirmEmail", s.handleServerConfirmEmail, s.handleSessionMiddleware)
+	s.echo.POST("/xrpc/com.atproto.server.requestEmailConfirmation", s.handleServerRequestEmailConfirmation, s.handleSessionMiddleware)
 
 	// repo
 	s.echo.POST("/xrpc/com.atproto.repo.createRecord", s.handleCreateRecord, s.handleSessionMiddleware)
@@ -364,6 +394,7 @@ func (s *Server) addRoutes() {
 	s.echo.GET("/xrpc/app.bsky.actor.getPreferences", s.handleActorGetPreferences, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/app.bsky.actor.putPreferences", s.handleActorPutPreferences, s.handleSessionMiddleware)
 
+	// are there any routes that we should be allowing without auth? i dont think so but idk
 	s.echo.GET("/xrpc/*", s.handleProxy, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/*", s.handleProxy, s.handleSessionMiddleware)
 }
@@ -395,7 +426,7 @@ func (s *Server) Serve(ctx context.Context) error {
 
 	for _, relay := range s.config.Relays {
 		cli := xrpc.Client{Host: relay}
-		atproto.SyncRequestCrawl(context.TODO(), &cli, &atproto.SyncRequestCrawl_Input{
+		atproto.SyncRequestCrawl(ctx, &cli, &atproto.SyncRequestCrawl_Input{
 			Hostname: s.config.Hostname,
 		})
 	}

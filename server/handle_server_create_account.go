@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"strings"
 	"time"
 
@@ -134,11 +135,12 @@ func (s *Server) handleCreateAccount(e echo.Context) error {
 	}
 
 	urepo := models.Repo{
-		Did:        did,
-		CreatedAt:  time.Now(),
-		Email:      request.Email,
-		Password:   string(hashed),
-		SigningKey: k.Bytes(),
+		Did:                   did,
+		CreatedAt:             time.Now(),
+		Email:                 request.Email,
+		EmailVerificationCode: to.StringPtr(fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))),
+		Password:              string(hashed),
+		SigningKey:            k.Bytes(),
 	}
 
 	actor := models.Actor{
@@ -198,6 +200,15 @@ func (s *Server) handleCreateAccount(e echo.Context) error {
 		s.logger.Error("error creating new session", "error", err)
 		return helpers.ServerError(e, nil)
 	}
+
+	go func() {
+		if err := s.sendEmailVerification(urepo.Email, actor.Handle, *urepo.EmailVerificationCode); err != nil {
+			s.logger.Error("error sending email verification email", "error", err)
+		}
+		if err := s.sendWelcomeMail(urepo.Email, actor.Handle); err != nil {
+			s.logger.Error("error sending welcome email", "error", err)
+		}
+	}()
 
 	return e.JSON(200, ComAtprotoServerCreateAccountResponse{
 		AccessJwt:  sess.AccessToken,
