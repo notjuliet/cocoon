@@ -51,7 +51,7 @@ var (
 )
 
 func (ot OpType) String() string {
-	return ot.String()
+	return string(ot)
 }
 
 type Op struct {
