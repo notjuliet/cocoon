@@ -106,6 +106,7 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 	r, err := repo.OpenRepo(context.TODO(), dbs, rootcid)
 
 	entries := []models.Record{}
+	var results []ApplyWriteResult
 
 	for i, op := range writes {
 		if op.Type != OpTypeCreate && op.Rkey == nil {
@@ -136,6 +137,12 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 				Cid:       nc.String(),
 				Value:     d,
 			})
+			results = append(results, ApplyWriteResult{
+				Type:             OpTypeCreate.String(),
+				Uri:              "at://" + urepo.Did + "/" + op.Collection + "/" + *op.Rkey,
+				Cid:              nc.String(),
+				ValidationStatus: to.StringPtr("valid"), // TODO: obviously this might not be true atm lol
+			})
 		case OpTypeDelete:
 			err := r.DeleteRecord(context.TODO(), op.Collection+"/"+*op.Rkey)
 			if err != nil {
@@ -155,6 +162,12 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 				Rkey:      *op.Rkey,
 				Cid:       nc.String(),
 				Value:     d,
+			})
+			results = append(results, ApplyWriteResult{
+				Type:             OpTypeUpdate.String(),
+				Uri:              "at://" + urepo.Did + "/" + op.Collection + "/" + *op.Rkey,
+				Cid:              nc.String(),
+				ValidationStatus: to.StringPtr("valid"), // TODO: obviously this might not be true atm lol
 			})
 		}
 	}
@@ -221,8 +234,6 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 		}
 	}
 
-	var results []ApplyWriteResult
-
 	var blobs []lexutil.LexLink
 	for _, entry := range entries {
 		if err := rm.s.db.Clauses(clause.OnConflict{
@@ -241,16 +252,6 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 		for _, c := range cids {
 			blobs = append(blobs, lexutil.LexLink(c))
 		}
-
-		results = append(results, ApplyWriteResult{
-			Uri: "at://" + urepo.Did + "/" + entry.Nsid + "/" + entry.Rkey,
-			Cid: entry.Cid,
-			Commit: &RepoCommit{
-				Cid: newroot.String(),
-				Rev: rev,
-			},
-			ValidationStatus: to.StringPtr("valid"), // TODO: obviously this might not be true atm lol
-		})
 	}
 
 	rm.s.evtman.AddEvent(context.TODO(), &events.XRPCStreamEvent{
@@ -269,6 +270,13 @@ func (rm *RepoMan) applyWrites(urepo models.Repo, writes []Op, swapCommit *strin
 
 	if err := dbs.UpdateRepo(context.TODO(), newroot, rev); err != nil {
 		return nil, err
+	}
+
+	for i := range results {
+		results[i].Commit = &RepoCommit{
+			Cid: newroot.String(),
+			Rev: rev,
+		}
 	}
 
 	return results, nil
