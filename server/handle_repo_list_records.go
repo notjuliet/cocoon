@@ -84,7 +84,7 @@ func (s *Server) handleListRecords(e echo.Context) error {
 	}
 
 	var newcursor *string
-	if len(records) == 50 {
+	if len(records) == limit {
 		newcursor = to.StringPtr(records[len(records)-1].CreatedAt)
 	}
 
