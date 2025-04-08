@@ -20,6 +20,14 @@ func (s *Server) getRepoByEmail(email string) (*models.Repo, error) {
 	return &repo, nil
 }
 
+func (s *Server) getRepoActorByEmail(email string) (*models.RepoActor, error) {
+	var repo models.RepoActor
+	if err := s.db.Raw("SELECT r.*, a.* FROM repos r LEFT JOIN actors a ON r.did = a.did WHERE r.email= ?", email).Scan(&repo).Error; err != nil {
+		return nil, err
+	}
+	return &repo, nil
+}
+
 func (s *Server) getRepoActorByDid(did string) (*models.RepoActor, error) {
 	var repo models.RepoActor
 	if err := s.db.Raw("SELECT r.*, a.* FROM repos r LEFT JOIN actors a ON r.did = a.did WHERE r.did = ?", did).Scan(&repo).Error; err != nil {

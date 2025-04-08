@@ -9,8 +9,29 @@ import (
 	"github.com/labstack/echo/v4"
 )
 
+type ComAtprotoServerRequestPasswordResetRequest struct {
+	Email string `json:"email" validate:"required"`
+}
+
 func (s *Server) handleServerRequestPasswordReset(e echo.Context) error {
-	urepo := e.Get("repo").(*models.RepoActor)
+	urepo, ok := e.Get("repo").(*models.RepoActor)
+	if !ok {
+		var req ComAtprotoServerRequestPasswordResetRequest
+		if err := e.Bind(&req); err != nil {
+			return err
+		}
+
+		if err := e.Validate(req); err != nil {
+			return err
+		}
+
+		murepo, err := s.getRepoActorByEmail(req.Email)
+		if err != nil {
+			return err
+		}
+
+		urepo = murepo
+	}
 
 	code := fmt.Sprintf("%s-%s", helpers.RandomVarchar(5), helpers.RandomVarchar(5))
 	eat := time.Now().Add(10 * time.Minute).UTC()
