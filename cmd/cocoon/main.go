@@ -57,6 +57,11 @@ func main() {
 				EnvVars:  []string{"COCOON_RELAYS"},
 			},
 			&cli.StringFlag{
+				Name:     "admin-password",
+				Required: true,
+				EnvVars:  []string{"COCOON_ADMIN_PASSWORD"},
+			},
+			&cli.StringFlag{
 				Name:     "smtp-user",
 				Required: false,
 				EnvVars:  []string{"COCOON_SMTP_USER"},
@@ -112,6 +117,7 @@ var run = &cli.Command{
 			ContactEmail:    cmd.String("contact-email"),
 			Version:         Version,
 			Relays:          cmd.StringSlice("relays"),
+			AdminPassword:   cmd.String("admin-password"),
 			SmtpUser:        cmd.String("smtp-user"),
 			SmtpPass:        cmd.String("smtp-pass"),
 			SmtpHost:        cmd.String("smtp-host"),

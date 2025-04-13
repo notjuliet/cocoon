@@ -61,6 +61,7 @@ type Args struct {
 	JwkPath         string
 	ContactEmail    string
 	Relays          []string
+	AdminPassword   string
 
 	SmtpUser  string
 	SmtpPass  string
@@ -77,6 +78,7 @@ type config struct {
 	ContactEmail   string
 	EnforcePeering bool
 	Relays         []string
+	AdminPassword  string
 	SmtpEmail      string
 	SmtpName       string
 }
@@ -119,6 +121,18 @@ func (s *Server) handleSessionMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 		pts := strings.Split(authheader, " ")
 		if len(pts) != 2 {
 			return helpers.ServerError(e, nil)
+		}
+
+		if pts[0] == "Basic" {
+			username, password, ok := e.Request().BasicAuth()
+			if !ok || username != "admin" || password != s.config.AdminPassword {
+				return helpers.InputError(e, to.StringPtr("Unauthorized"))
+			} else {
+				if err := next(e); err != nil {
+					e.Error(err)
+				}
+				return nil
+			}
 		}
 
 		tokenstr := pts[1]
@@ -225,6 +239,10 @@ func New(args *Args) (*Server, error) {
 		return nil, fmt.Errorf("cocoon hostname must be set")
 	}
 
+	if args.AdminPassword == "" {
+		return nil, fmt.Errorf("admin password must be set")
+	}
+
 	if args.Logger == nil {
 		args.Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 	}
@@ -326,6 +344,7 @@ func New(args *Args) (*Server, error) {
 			ContactEmail:   args.ContactEmail,
 			EnforcePeering: false,
 			Relays:         args.Relays,
+			AdminPassword:  args.AdminPassword,
 			SmtpName:       args.SmtpName,
 			SmtpEmail:      args.SmtpEmail,
 		},
@@ -388,6 +407,7 @@ func (s *Server) addRoutes() {
 	s.echo.POST("/xrpc/com.atproto.server.requestEmailUpdate", s.handleServerRequestEmailUpdate, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/com.atproto.server.resetPassword", s.handleServerResetPassword, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/com.atproto.server.updateEmail", s.handleServerUpdateEmail, s.handleSessionMiddleware)
+	s.echo.POST("/xrpc/com.atproto.server.createInviteCode", s.handleCreateInviteCode, s.handleSessionMiddleware)
 
 	// repo
 	s.echo.POST("/xrpc/com.atproto.repo.createRecord", s.handleCreateRecord, s.handleSessionMiddleware)
