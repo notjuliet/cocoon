@@ -99,7 +99,9 @@ func main() {
 		Version:   Version,
 	}
 
-	app.Run(os.Args)
+	if err := app.Run(os.Args); err != nil {
+		fmt.Printf("Error: %v\n", err)
+	}
 }
 
 var run = &cli.Command{
