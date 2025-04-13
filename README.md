@@ -22,7 +22,7 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 - [x] com.atproto.repo.applyWrites
 - [x] com.atproto.repo.createRecord
 - [x] com.atproto.repo.putRecord
-- [ ] com.atproto.repo.deleteRecord
+- [x] com.atproto.repo.deleteRecord
 - [x] com.atproto.repo.describeRepo
 - [x] com.atproto.repo.getRecord
 - [ ] com.atproto.repo.importRepo
@@ -34,6 +34,8 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 - [ ] com.atproto.server.checkAccountStatus
 - [x] com.atproto.server.confirmEmail
 - [x] com.atproto.server.createAccount
+- [x] com.atproto.server.createInviteCode
+- [ ] com.atproto.server.createInviteCodes
 - [ ] com.atproto.server.deactivateAccount
 - [ ] com.atproto.server.deleteAccount
 - [x] com.atproto.server.deleteSession
