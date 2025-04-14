@@ -121,6 +121,7 @@ func (s *Server) handleAdminMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 		if err := next(e); err != nil {
 			e.Error(err)
 		}
+		
 		return nil
 	}
 }
