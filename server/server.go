@@ -111,6 +111,20 @@ func (cv *CustomValidator) Validate(i any) error {
 	return nil
 }
 
+func (s *Server) handleAdminMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(e echo.Context) error {
+		username, password, ok := e.Request().BasicAuth()
+		if !ok || username != "admin" || password != s.config.AdminPassword {
+			return helpers.InputError(e, to.StringPtr("Unauthorized"))
+		}
+
+		if err := next(e); err != nil {
+			e.Error(err)
+		}
+		return nil
+	}
+}
+
 func (s *Server) handleSessionMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
 	return func(e echo.Context) error {
 		authheader := e.Request().Header.Get("authorization")
@@ -121,18 +135,6 @@ func (s *Server) handleSessionMiddleware(next echo.HandlerFunc) echo.HandlerFunc
 		pts := strings.Split(authheader, " ")
 		if len(pts) != 2 {
 			return helpers.ServerError(e, nil)
-		}
-
-		if pts[0] == "Basic" {
-			username, password, ok := e.Request().BasicAuth()
-			if !ok || username != "admin" || password != s.config.AdminPassword {
-				return helpers.InputError(e, to.StringPtr("Unauthorized"))
-			} else {
-				if err := next(e); err != nil {
-					e.Error(err)
-				}
-				return nil
-			}
 		}
 
 		tokenstr := pts[1]
@@ -407,8 +409,8 @@ func (s *Server) addRoutes() {
 	s.echo.POST("/xrpc/com.atproto.server.requestEmailUpdate", s.handleServerRequestEmailUpdate, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/com.atproto.server.resetPassword", s.handleServerResetPassword, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/com.atproto.server.updateEmail", s.handleServerUpdateEmail, s.handleSessionMiddleware)
-	s.echo.POST("/xrpc/com.atproto.server.createInviteCode", s.handleCreateInviteCode, s.handleSessionMiddleware)
-	s.echo.POST("/xrpc/com.atproto.server.createInviteCodes", s.handleCreateInviteCodes, s.handleSessionMiddleware)
+	s.echo.POST("/xrpc/com.atproto.server.createInviteCode", s.handleCreateInviteCode, s.handleAdminMiddleware)
+	s.echo.POST("/xrpc/com.atproto.server.createInviteCodes", s.handleCreateInviteCodes, s.handleAdminMiddleware)
 
 	// repo
 	s.echo.POST("/xrpc/com.atproto.repo.createRecord", s.handleCreateRecord, s.handleSessionMiddleware)
