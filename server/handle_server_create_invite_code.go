@@ -8,8 +8,8 @@ import (
 )
 
 type ComAtprotoServerCreateInviteCodeRequest struct {
-	UseCount   int    `json:"useCount" validate:"required"`
-	ForAccount string `json:"forAccount" validate:"atproto-did"`
+	UseCount   int     `json:"useCount" validate:"required"`
+	ForAccount *string `json:"forAccount,omitempty" validate:"atproto-did"`
 }
 
 type ComAtprotoServerCreateInviteCodeResponse struct {
@@ -23,11 +23,16 @@ func (s *Server) handleCreateInviteCode(e echo.Context) error {
 		return helpers.ServerError(e, nil)
 	}
 
+	if err := e.Validate(req); err != nil {
+		s.logger.Error("error validating", "error", err)
+		return helpers.InputError(e, nil)
+	}
+
 	ic := uuid.NewString()
 
 	if err := s.db.Create(&models.InviteCode{
 		Code:              ic,
-		Did:               req.ForAccount,
+		Did:               *req.ForAccount,
 		RemainingUseCount: req.UseCount,
 	}).Error; err != nil {
 		s.logger.Error("error creating invite code", "error", err)
