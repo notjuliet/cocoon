@@ -35,7 +35,7 @@ Just because something is implemented doesn't mean it is finisehd. Tons of these
 - [x] com.atproto.server.confirmEmail
 - [x] com.atproto.server.createAccount
 - [x] com.atproto.server.createInviteCode
-- [ ] com.atproto.server.createInviteCodes
+- [x] com.atproto.server.createInviteCodes
 - [ ] com.atproto.server.deactivateAccount
 - [ ] com.atproto.server.deleteAccount
 - [x] com.atproto.server.deleteSession
