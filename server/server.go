@@ -61,6 +61,7 @@ type Args struct {
 	JwkPath         string
 	ContactEmail    string
 	Relays          []string
+	AdminPassword   string
 
 	SmtpUser  string
 	SmtpPass  string
@@ -77,6 +78,7 @@ type config struct {
 	ContactEmail   string
 	EnforcePeering bool
 	Relays         []string
+	AdminPassword  string
 	SmtpEmail      string
 	SmtpName       string
 }
@@ -107,6 +109,21 @@ func (cv *CustomValidator) Validate(i any) error {
 	}
 
 	return nil
+}
+
+func (s *Server) handleAdminMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
+	return func(e echo.Context) error {
+		username, password, ok := e.Request().BasicAuth()
+		if !ok || username != "admin" || password != s.config.AdminPassword {
+			return helpers.InputError(e, to.StringPtr("Unauthorized"))
+		}
+
+		if err := next(e); err != nil {
+			e.Error(err)
+		}
+		
+		return nil
+	}
 }
 
 func (s *Server) handleSessionMiddleware(next echo.HandlerFunc) echo.HandlerFunc {
@@ -225,6 +242,10 @@ func New(args *Args) (*Server, error) {
 		return nil, fmt.Errorf("cocoon hostname must be set")
 	}
 
+	if args.AdminPassword == "" {
+		return nil, fmt.Errorf("admin password must be set")
+	}
+
 	if args.Logger == nil {
 		args.Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{}))
 	}
@@ -326,6 +347,7 @@ func New(args *Args) (*Server, error) {
 			ContactEmail:   args.ContactEmail,
 			EnforcePeering: false,
 			Relays:         args.Relays,
+			AdminPassword:  args.AdminPassword,
 			SmtpName:       args.SmtpName,
 			SmtpEmail:      args.SmtpEmail,
 		},
@@ -403,6 +425,10 @@ func (s *Server) addRoutes() {
 	// are there any routes that we should be allowing without auth? i dont think so but idk
 	s.echo.GET("/xrpc/*", s.handleProxy, s.handleSessionMiddleware)
 	s.echo.POST("/xrpc/*", s.handleProxy, s.handleSessionMiddleware)
+	
+	// admin routes
+	s.echo.POST("/xrpc/com.atproto.server.createInviteCode", s.handleCreateInviteCode, s.handleAdminMiddleware)
+	s.echo.POST("/xrpc/com.atproto.server.createInviteCodes", s.handleCreateInviteCodes, s.handleAdminMiddleware)
 }
 
 func (s *Server) Serve(ctx context.Context) error {
