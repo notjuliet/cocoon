@@ -9,7 +9,7 @@ import (
 
 type ComAtprotoServerCreateInviteCodeRequest struct {
 	UseCount   int     `json:"useCount" validate:"required"`
-	ForAccount *string `json:"forAccount,omitempty" validate:"atproto-did"`
+	ForAccount *string `json:"forAccount,omitempty"`
 }
 
 type ComAtprotoServerCreateInviteCodeResponse struct {
@@ -30,9 +30,16 @@ func (s *Server) handleCreateInviteCode(e echo.Context) error {
 
 	ic := uuid.NewString()
 
+	var acc string
+	if req.ForAccount == nil {
+		acc = "admin"
+	} else {
+		acc = *req.ForAccount
+	}
+
 	if err := s.db.Create(&models.InviteCode{
 		Code:              ic,
-		Did:               *req.ForAccount,
+		Did:               acc,
 		RemainingUseCount: req.UseCount,
 	}).Error; err != nil {
 		s.logger.Error("error creating invite code", "error", err)
