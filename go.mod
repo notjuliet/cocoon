@@ -4,7 +4,7 @@ go 1.24.1
 
 require (
 	github.com/Azure/go-autorest/autorest/to v0.4.1
-	github.com/bluesky-social/indigo v0.0.0-20250322011324-8e3fa7af986a
+	github.com/bluesky-social/indigo v0.0.0-20250414202759-826fcdeaa36b
 	github.com/btcsuite/websocket v0.0.0-20150119174127-31079b680792
 	github.com/go-playground/validator v9.31.0+incompatible
 	github.com/golang-jwt/jwt/v4 v4.5.2
