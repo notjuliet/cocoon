@@ -141,6 +141,7 @@ func (s *Server) handleCreateAccount(e echo.Context) error {
 		EmailVerificationCode: to.StringPtr(fmt.Sprintf("%s-%s", helpers.RandomVarchar(6), helpers.RandomVarchar(6))),
 		Password:              string(hashed),
 		SigningKey:            k.Bytes(),
+		Preferences:           []byte("{\"preferences\":[]}"),
 	}
 
 	actor := models.Actor{
